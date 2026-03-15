@@ -1,0 +1,210 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-03-15T17:40:30+01:00",
+    "name": "Node.js Generic",
+    "author": "eggs@pashka.host",
+    "description": "A generic Node.js egg with native Git support. Clones or pulls a repo on every start. Supports .js, .ts, .mjs and .cjs entry points, and npm, Yarn and pnpm.",
+    "features": [],
+    "docker_images": {
+        "Node.js 25": "ghcr.io\/ptero-eggs\/yolks:nodejs_25",
+        "Node.js 24": "ghcr.io\/ptero-eggs\/yolks:nodejs_24",
+        "Node.js 23": "ghcr.io\/ptero-eggs\/yolks:nodejs_23",
+        "Node.js 22 [LTS]": "ghcr.io\/ptero-eggs\/yolks:nodejs_22",
+        "Node.js 21": "ghcr.io\/ptero-eggs\/yolks:nodejs_21",
+        "Node.js 20 [LTS]": "ghcr.io\/ptero-eggs\/yolks:nodejs_20",
+        "Node.js 19": "ghcr.io\/ptero-eggs\/yolks:nodejs_19",
+        "Node.js 18 [LTS]": "ghcr.io\/ptero-eggs\/yolks:nodejs_18",
+        "Node.js 17": "ghcr.io\/ptero-eggs\/yolks:nodejs_17",
+        "Node.js 16": "ghcr.io\/ptero-eggs\/yolks:nodejs_16",
+        "Node.js 14": "ghcr.io\/ptero-eggs\/yolks:nodejs_14",
+        "Node.js 12": "ghcr.io\/ptero-eggs\/yolks:nodejs_12",
+        "Node.js 24 w\/ Chromium": "ghcr.io\/zastinian\/esdock:chrnodejs_24",
+        "Node.js 22 w\/ Chromium": "ghcr.io\/zastinian\/esdock:chrnodejs_22",
+        "Node.js 20 w\/ Chromium": "ghcr.io\/zastinian\/esdock:chrnodejs_20",
+        "Node.js 18 w\/ Chromium": "ghcr.io\/zastinian\/esdock:chrnodejs_18",
+        "Node.js 16 w\/ Chromium": "ghcr.io\/zastinian\/esdock:chrnodejs_16",
+        "Node.js 14 w\/ Chromium": "ghcr.io\/zastinian\/esdock:chrnodejs_14",
+        "Node.js 12 w\/ Chromium": "ghcr.io\/zastinian\/esdock:chrnodejs_12"
+    },
+    "file_denylist": [],
+    "startup": "if [ \"${AUTO_UPDATE}\" == \"1\" ]; then GIT_ADDRESS_NORM=\"${GIT_ADDRESS}\"; if [[ \"${GIT_ADDRESS_NORM}\" != *.git ]]; then GIT_ADDRESS_NORM=\"${GIT_ADDRESS_NORM}.git\"; fi; USERNAME_NORM=\"${USERNAME:-git}\"; REPO_URL=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@${GIT_ADDRESS_NORM}\"; BRANCH=\"${BRANCH:-main}\"; if [ ! -d .git ] || [ ! -f .git\/config ]; then echo \"Cloning repo...\"; rm -rf * .git && git clone --branch \"$BRANCH\" \"$REPO_URL\" .; else echo \"Pulling latest from $BRANCH...\"; git fetch origin \"$BRANCH\" && git reset --hard FETCH_HEAD; fi; fi; if [ -f package.json ]; then if [ \"${USE_YARN}\" == \"1\" ]; then yarn install ${YARN_FLAGS}; elif [ \"${USE_PNPM}\" == \"1\" ]; then pnpm install ${PNPM_FLAGS}; else npm install ${NPM_FLAGS}; fi; fi; if [ ! -z \"${NODE_PACKAGES}\" ]; then npm install ${NODE_PACKAGES}; fi; if [ ! -z \"${UNNODE_PACKAGES}\" ]; then npm uninstall ${UNNODE_PACKAGES}; fi; if [ ! -z \"${PRE_START_CMD}\" ]; then echo \"Running pre-start command...\"; eval \"${PRE_START_CMD}\"; fi; export NODE_ENV=\"${NODE_ENV:-production}\"; FILE_TO_RUN=\"${MAIN_FILE:-index.js}\"; case \"$FILE_TO_RUN\" in *.js|*.mjs|*.cjs) node \"\/home\/container\/$FILE_TO_RUN\" ${NODE_ARGS} ;; *.ts) ts-node --esm \"\/home\/container\/$FILE_TO_RUN\" ${NODE_ARGS} ;; *) echo \"Unsupported file extension: $FILE_TO_RUN\"; exit 1 ;; esac",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": [\r\n        \"Listening\",\r\n        \"Started\",\r\n        \"Ready\",\r\n        \"running on\",\r\n        \"Server started\"\r\n    ]\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# Node.js Generic \u2014 Installation Script\r\n# Support: eggs@pashka.host\r\n\r\napt update -y\r\napt install -y git curl jq file unzip make gcc g++ python3 python3-dev python3-pip libtool\r\n\r\necho \"Updating npm to latest...\"\r\nnpm install npm@latest --location=global\r\n\r\nif [ \"${USE_YARN}\" == \"1\" ]; then\r\n    echo \"Installing Yarn...\"\r\n    npm install -g yarn\r\nfi\r\n\r\nif [ \"${USE_PNPM}\" == \"1\" ]; then\r\n    echo \"Installing pnpm...\"\r\n    npm install -g pnpm\r\nfi\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\nif [ -z \"${GIT_ADDRESS}\" ]; then\r\n    echo \"No git repo set \u2014 skipping clone.\"\r\n    exit 0\r\nfi\r\n\r\nif [[ ${GIT_ADDRESS} != *.git ]]; then\r\n    GIT_ADDRESS=${GIT_ADDRESS}.git\r\nfi\r\n\r\nUSERNAME_NORM=\"${USERNAME:-git}\"\r\n\r\nif [ -z \"${ACCESS_TOKEN}\" ]; then\r\n    echo \"Using anonymous clone.\"\r\nelse\r\n    GIT_ADDRESS=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@$(echo ${GIT_ADDRESS} | cut -d\/ -f3-)\"\r\nfi\r\n\r\nBRANCH=\"${BRANCH:-main}\"\r\n\r\nif [ \"$(ls -A \/mnt\/server)\" ]; then\r\n    if [ -d .git ] && [ -f .git\/config ]; then\r\n        ORIGIN=$(git config --get remote.origin.url)\r\n        if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n            echo \"Pulling latest from ${BRANCH}...\"\r\n            git pull origin ${BRANCH}\r\n        else\r\n            echo \"Different repo detected \u2014 skipping pull.\"\r\n        fi\r\n    else\r\n        echo \"Files found with no git config \u2014 skipping to avoid data loss.\"\r\n        exit 10\r\n    fi\r\nelse\r\n    echo \"Cloning ${GIT_ADDRESS} (branch: ${BRANCH})...\"\r\n    git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .\r\nfi\r\n\r\nif [ -f \/mnt\/server\/package.json ]; then\r\n    echo \"Installing packages...\"\r\n    if [ \"${USE_YARN}\" == \"1\" ]; then\r\n        yarn install\r\n    elif [ \"${USE_PNPM}\" == \"1\" ]; then\r\n        pnpm install\r\n    else\r\n        npm install --production\r\n    fi\r\nfi\r\n\r\necho \"Installation complete.\"\r\nexit 0",
+            "container": "node:20-trixie-slim",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Git Repository",
+            "description": "Full HTTPS URL of the Git repository to clone.",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Branch",
+            "description": "Branch to clone and pull from on each start.",
+            "env_variable": "BRANCH",
+            "default_value": "main",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Username",
+            "description": "Username for authenticating with a private repository.",
+            "env_variable": "USERNAME",
+            "default_value": "git",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Access Token",
+            "description": "Personal access token for authenticating with a private repository.",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update",
+            "description": "Pulls the latest changes from the repository on every startup.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Main File",
+            "description": "Entry point of the application. Supports .js, .ts, .mjs and .cjs.",
+            "env_variable": "MAIN_FILE",
+            "default_value": "index.js",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Node Environment",
+            "description": "Value of the environment variable.",
+            "env_variable": "NODE_ENV",
+            "default_value": "production",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:32",
+            "field_type": "text"
+        },
+        {
+            "name": "Node Arguments",
+            "description": "Extra arguments passed to the node process at startup.",
+            "env_variable": "NODE_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Pre-Start Command",
+            "description": "Shell command to run after install but before the app starts.",
+            "env_variable": "PRE_START_CMD",
+            "default_value": "ulimit -c 0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Extra Packages",
+            "description": "Additional npm packages to install at startup, space-separated.",
+            "env_variable": "NODE_PACKAGES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Remove Packages",
+            "description": "npm packages to uninstall at startup, space-separated.",
+            "env_variable": "UNNODE_PACKAGES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Use Yarn",
+            "description": "Uses Yarn instead of npm for package management.",
+            "env_variable": "USE_YARN",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Yarn Flags",
+            "description": "Extra flags passed to yarn install.",
+            "env_variable": "YARN_FLAGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:128",
+            "field_type": "text"
+        },
+        {
+            "name": "Use pnpm",
+            "description": "Uses pnpm instead of npm for package management.",
+            "env_variable": "USE_PNPM",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "pnpm Flags",
+            "description": "Extra flags passed to pnpm install.",
+            "env_variable": "PNPM_FLAGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:128",
+            "field_type": "text"
+        },
+        {
+            "name": "npm Flags",
+            "description": "Extra flags passed to npm install.",
+            "env_variable": "NPM_FLAGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:128",
+            "field_type": "text"
+        }
+    ]
+}
