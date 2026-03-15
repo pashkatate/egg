@@ -158,7 +158,7 @@
             "name": "Pre-Start Command",
             "description": "Shell command to run after install but before the app starts.",
             "env_variable": "PRE_START_CMD",
-            "default_value": "ulimit -c 0;",
+            "default_value": "ulimit -c 0",
             "user_viewable": true,
             "user_editable": true,
             "rules": "nullable|string|max:256",
