@@ -1,0 +1,168 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-03-15T18:16:02+01:00",
+    "name": "Python Generic",
+    "author": "eggs@pashka.host",
+    "description": "A generic Python egg with native Git support. Clones or pulls a repo on every start. Supports virtual environments, custom requirements files, and both pip package installs and removals.",
+    "features": [],
+    "docker_images": {
+        "Python 3.13 [Stable]": "ghcr.io\/ptero-eggs\/yolks:python_3.13",
+        "Python 3.12 [Stable]": "ghcr.io\/ptero-eggs\/yolks:python_3.12",
+        "Python 3.11": "ghcr.io\/ptero-eggs\/yolks:python_3.11",
+        "Python 3.10": "ghcr.io\/ptero-eggs\/yolks:python_3.10",
+        "Python 3.9": "ghcr.io\/ptero-eggs\/yolks:python_3.9",
+        "Python 3.8": "ghcr.io\/ptero-eggs\/yolks:python_3.8",
+        "Python 3.7": "ghcr.io\/ptero-eggs\/yolks:python_3.7"
+    },
+    "file_denylist": [],
+    "startup": "if [ \"${AUTO_UPDATE}\" == \"1\" ]; then GIT_ADDR=\"${GIT_ADDRESS}\"; if [[ \"${GIT_ADDR}\" != *.git ]]; then GIT_ADDR=\"${GIT_ADDR}.git\"; fi; USERNAME_NORM=\"${USERNAME:-git}\"; REPO_URL=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@${GIT_ADDR}\"; BRANCH=\"${BRANCH:-main}\"; if [ ! -d .git ] || [ ! -f .git\/config ]; then echo \"Cloning repo...\"; rm -rf * .git && git clone --branch \"$BRANCH\" \"$REPO_URL\" .; else echo \"Pulling latest from $BRANCH...\"; git fetch origin \"$BRANCH\" && git reset --hard FETCH_HEAD; fi; fi; export HOME=\/home\/container; export PYTHONPATH=\/home\/container\/.local\/lib\/python$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d'.' -f1,2)\/site-packages:$PYTHONPATH; if [ \"${USE_VENV}\" == \"1\" ]; then if [ ! -d .venv ]; then python3 -m venv .venv; fi; source .venv\/bin\/activate; fi; if [ -f \"\/home\/container\/${REQUIREMENTS_FILE}\" ]; then pip install -U --prefix .local -r \"\/home\/container\/${REQUIREMENTS_FILE}\"; fi; if [ ! -z \"${PY_PACKAGES}\" ]; then pip install -U --prefix .local ${PY_PACKAGES}; fi; if [ ! -z \"${REMOVE_PACKAGES}\" ]; then pip uninstall -y ${REMOVE_PACKAGES}; fi; if [ ! -z \"${PRE_START_CMD}\" ]; then echo \"Running pre-start command...\"; eval \"${PRE_START_CMD}\"; fi; export PYTHONUNBUFFERED=\"${PYTHONUNBUFFERED:-1}\"; python3 \/home\/container\/${PY_FILE} ${PY_ARGS}",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": [\r\n        \"Listening\",\r\n        \"Started\",\r\n        \"Ready\",\r\n        \"running on\",\r\n        \"Server started\",\r\n        \"logged in\",\r\n        \"Connected\"\r\n    ]\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# Python Generic \u2014 Installation Script\r\n# Support: eggs@pashka.host\r\n\r\napt update -y\r\napt install -y git curl jq file unzip make gcc g++ python3-dev python3-pip python3-venv libtool libffi-dev libssl-dev\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\nif [ -z \"${GIT_ADDRESS}\" ]; then\r\n    echo \"No git repo set \u2014 skipping clone.\"\r\n    exit 0\r\nfi\r\n\r\nif [[ ${GIT_ADDRESS} != *.git ]]; then\r\n    GIT_ADDRESS=${GIT_ADDRESS}.git\r\nfi\r\n\r\nUSERNAME_NORM=\"${USERNAME:-git}\"\r\n\r\nif [ -z \"${ACCESS_TOKEN}\" ]; then\r\n    echo \"Using anonymous clone.\"\r\nelse\r\n    GIT_ADDRESS=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@$(echo ${GIT_ADDRESS} | cut -d\/ -f3-)\"\r\nfi\r\n\r\nBRANCH=\"${BRANCH:-main}\"\r\n\r\nif [ \"$(ls -A \/mnt\/server)\" ]; then\r\n    if [ -d .git ] && [ -f .git\/config ]; then\r\n        ORIGIN=$(git config --get remote.origin.url)\r\n        if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n            echo \"Pulling latest from ${BRANCH}...\"\r\n            git pull origin ${BRANCH}\r\n        else\r\n            echo \"Different repo detected \u2014 skipping pull.\"\r\n        fi\r\n    else\r\n        echo \"Files found with no git config \u2014 skipping to avoid data loss.\"\r\n        exit 10\r\n    fi\r\nelse\r\n    echo \"Cloning ${GIT_ADDRESS} (branch: ${BRANCH})...\"\r\n    git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .\r\nfi\r\n\r\nexport HOME=\/mnt\/server\r\n\r\nif [ \"${USE_VENV}\" == \"1\" ]; then\r\n    echo \"Creating virtual environment...\"\r\n    python3 -m venv .venv\r\n    source .venv\/bin\/activate\r\nfi\r\n\r\nif [ -f \/mnt\/server\/${REQUIREMENTS_FILE} ]; then\r\n    echo \"Installing requirements from ${REQUIREMENTS_FILE}...\"\r\n    pip install -U --prefix .local -r \/mnt\/server\/${REQUIREMENTS_FILE}\r\nfi\r\n\r\nif [ ! -z \"${PY_PACKAGES}\" ]; then\r\n    echo \"Installing extra packages...\"\r\n    pip install -U --prefix .local ${PY_PACKAGES}\r\nfi\r\n\r\necho \"Installation complete.\"\r\nexit 0",
+            "container": "ghcr.io\/ptero-eggs\/yolks:python_3.12",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Git Repository",
+            "description": "Full HTTPS URL of the Git repository to clone.",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Branch",
+            "description": "Branch to clone and pull from on each start.",
+            "env_variable": "BRANCH",
+            "default_value": "main",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Username",
+            "description": "Username for authenticating with a private repository.",
+            "env_variable": "USERNAME",
+            "default_value": "git",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Access Token",
+            "description": "Personal access token for authenticating with a private repository.",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update",
+            "description": "Pulls the latest changes from the repository on every startup.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Main File",
+            "description": "Python file to run at startup.",
+            "env_variable": "PY_FILE",
+            "default_value": "main.py",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Python Arguments",
+            "description": "Extra arguments passed to the Python process at startup.",
+            "env_variable": "PY_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Requirements File",
+            "description": "Path to the pip requirements file to install from.",
+            "env_variable": "REQUIREMENTS_FILE",
+            "default_value": "requirements.txt",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Extra Packages",
+            "description": "Additional pip packages to install at startup, space-separated.",
+            "env_variable": "PY_PACKAGES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Remove Packages",
+            "description": "pip packages to uninstall at startup, space-separated.",
+            "env_variable": "REMOVE_PACKAGES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Use Virtual Environment",
+            "description": "Creates and activates a .venv virtual environment before running.",
+            "env_variable": "USE_VENV",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Unbuffered Output",
+            "description": "Enables unbuffered stdout and stderr for real-time console output.",
+            "env_variable": "PYTHONUNBUFFERED",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Pre-Start Command",
+            "description": "Shell command to run after install but before the app starts.",
+            "env_variable": "PRE_START_CMD",
+            "default_value": "ulimit -c 0;",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        }
+    ]
+}
