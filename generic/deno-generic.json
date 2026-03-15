@@ -1,0 +1,142 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-03-15T19:05:37+01:00",
+    "name": "Deno Generic",
+    "author": "eggs@pashka.host",
+    "description": "A generic Deno egg with native Git support. Clones or pulls a repo on every start and runs it with Deno. Supports TypeScript, JavaScript, JSX and TSX out of the box with configurable permissions.",
+    "features": [],
+    "docker_images": {
+        "Debian [Latest]": "ghcr.io\/ptero-eggs\/yolks:debian"
+    },
+    "file_denylist": [],
+    "startup": "if [ \"${AUTO_UPDATE}\" == \"1\" ]; then GIT_ADDR=\"${GIT_ADDRESS}\"; if [[ \"${GIT_ADDR}\" != *.git ]]; then GIT_ADDR=\"${GIT_ADDR}.git\"; fi; USERNAME_NORM=\"${USERNAME:-git}\"; REPO_URL=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@${GIT_ADDR}\"; BRANCH=\"${BRANCH:-main}\"; if [ ! -d .git ] || [ ! -f .git\/config ]; then echo \"Cloning repo...\"; rm -rf * .git && git clone --branch \"$BRANCH\" \"$REPO_URL\" .; else echo \"Pulling latest from $BRANCH...\"; git fetch origin \"$BRANCH\" && git reset --hard FETCH_HEAD; fi; fi; if [ ! -z \"${PRE_START_CMD}\" ]; then echo \"Running pre-start command...\"; eval \"${PRE_START_CMD}\"; fi; export DENO_DIR=\/home\/container\/.deno; \/home\/container\/deno cache \/home\/container\/${MAIN_FILE} 2>\/dev\/null || true; \/home\/container\/deno run ${DENO_PERMISSIONS} ${DENO_ARGS} \/home\/container\/${MAIN_FILE} ${APP_ARGS}",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": [\r\n        \"Listening\",\r\n        \"Started\",\r\n        \"Ready\",\r\n        \"running on\",\r\n        \"Server started\",\r\n        \"Connected\"\r\n    ]\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# Deno Generic \u2014 Installation Script\r\n# Support: eggs@pashka.host\r\n\r\napt update -y\r\napt install -y git curl jq file unzip\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\n## Install Deno\r\necho \"Installing Deno...\"\r\nGITHUB_PACKAGE=denoland\/deno\r\nMATCH=x86_64-unknown-linux-gnu\r\n\r\nLATEST_JSON=$(curl --silent \"https:\/\/api.github.com\/repos\/${GITHUB_PACKAGE}\/releases\/latest\")\r\n\r\nif [ -z \"${DENO_VERSION}\" ] || [ \"${DENO_VERSION}\" == \"latest\" ]; then\r\n    DOWNLOAD_URL=$(echo ${LATEST_JSON} | jq -r '.assets[].browser_download_url' | grep ${MATCH} | grep -v sha256)\r\nelse\r\n    RELEASES=$(curl --silent \"https:\/\/api.github.com\/repos\/${GITHUB_PACKAGE}\/releases\")\r\n    VERSION_CHECK=$(echo ${RELEASES} | jq -r --arg V \"v${DENO_VERSION}\" '.[] | select(.tag_name==$V) | .tag_name')\r\n    if [ ! -z \"${VERSION_CHECK}\" ]; then\r\n        DOWNLOAD_URL=$(echo ${RELEASES} | jq -r --arg V \"v${DENO_VERSION}\" '.[] | select(.tag_name==$V) | .assets[].browser_download_url' | grep ${MATCH} | grep -v sha256)\r\n    else\r\n        echo \"Version ${DENO_VERSION} not found \u2014 falling back to latest.\"\r\n        DOWNLOAD_URL=$(echo ${LATEST_JSON} | jq -r '.assets[].browser_download_url' | grep ${MATCH} | grep -v sha256)\r\n    fi\r\nfi\r\n\r\necho \"Downloading Deno from ${DOWNLOAD_URL}...\"\r\ncurl -sSL \"${DOWNLOAD_URL}\" -o deno.zip\r\nunzip -o deno.zip\r\nrm -f deno.zip\r\nchmod +x deno\r\necho \"Deno $(\/mnt\/server\/deno --version | head -1) installed.\"\r\n\r\n## Clone repo\r\nif [ -z \"${GIT_ADDRESS}\" ]; then\r\n    echo \"No git repo set \u2014 skipping clone.\"\r\n    exit 0\r\nfi\r\n\r\nif [[ ${GIT_ADDRESS} != *.git ]]; then\r\n    GIT_ADDRESS=${GIT_ADDRESS}.git\r\nfi\r\n\r\nUSERNAME_NORM=\"${USERNAME:-git}\"\r\n\r\nif [ -z \"${ACCESS_TOKEN}\" ]; then\r\n    echo \"Using anonymous clone.\"\r\nelse\r\n    GIT_ADDRESS=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@$(echo ${GIT_ADDRESS} | cut -d\/ -f3-)\"\r\nfi\r\n\r\nBRANCH=\"${BRANCH:-main}\"\r\n\r\nif [ \"$(ls -A \/mnt\/server | grep -v deno)\" ]; then\r\n    if [ -d .git ] && [ -f .git\/config ]; then\r\n        ORIGIN=$(git config --get remote.origin.url)\r\n        if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n            echo \"Pulling latest from ${BRANCH}...\"\r\n            git pull origin ${BRANCH}\r\n        else\r\n            echo \"Different repo detected \u2014 skipping pull.\"\r\n        fi\r\n    else\r\n        echo \"Files found with no git config \u2014 skipping to avoid data loss.\"\r\n        exit 10\r\n    fi\r\nelse\r\n    echo \"Cloning ${GIT_ADDRESS} (branch: ${BRANCH})...\"\r\n    git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .\r\nfi\r\n\r\n## Pre-cache dependencies\r\nexport DENO_DIR=\/mnt\/server\/.deno\r\nif [ -f \/mnt\/server\/${MAIN_FILE} ]; then\r\n    echo \"Caching dependencies...\"\r\n    \/mnt\/server\/deno cache \/mnt\/server\/${MAIN_FILE} 2>\/dev\/null || true\r\nfi\r\n\r\necho \"Installation complete.\"\r\nexit 0",
+            "container": "ghcr.io\/ptero-eggs\/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Git Repository",
+            "description": "Full HTTPS URL of the Git repository to clone.",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Branch",
+            "description": "Branch to clone and pull from on each start.",
+            "env_variable": "BRANCH",
+            "default_value": "main",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Username",
+            "description": "Username for authenticating with a private repository.",
+            "env_variable": "USERNAME",
+            "default_value": "git",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Access Token",
+            "description": "Personal access token for authenticating with a private repository.",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update",
+            "description": "Pulls the latest changes from the repository on every startup.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Main File",
+            "description": "Entry point to run. Supports .ts, .js, .tsx and .jsx.",
+            "env_variable": "MAIN_FILE",
+            "default_value": "main.ts",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Deno Permissions",
+            "description": "Permission flags passed to deno run. Use --allow-all to grant all permissions.",
+            "env_variable": "DENO_PERMISSIONS",
+            "default_value": "--allow-net --allow-read --allow-env",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Deno Arguments",
+            "description": "Extra flags passed to deno run.",
+            "env_variable": "DENO_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "App Arguments",
+            "description": "Arguments passed to the application at runtime.",
+            "env_variable": "APP_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Deno Version",
+            "description": "Deno version to install. Leave empty or set to latest for the newest release.",
+            "env_variable": "DENO_VERSION",
+            "default_value": "latest",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:16",
+            "field_type": "text"
+        },
+        {
+            "name": "Pre-Start Command",
+            "description": "Shell command to run after pulling but before the app starts.",
+            "env_variable": "PRE_START_CMD",
+            "default_value": "ulimit -c 0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        }
+    ]
+}
