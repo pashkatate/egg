@@ -19,7 +19,7 @@
         "Java 17 [LTS]": "ghcr.io\/ptero-eggs\/yolks:java_17",
         "Java 16": "ghcr.io\/ptero-eggs\/yolks:java_16",
         "Java 11 [LTS]": "ghcr.io\/ptero-eggs\/yolks:java_11",
-        "Java 8": "ghcr.io\/ptero-eggs\/yolks:java_8"
+        "Java 8 [LTS]": "ghcr.io\/ptero-eggs\/yolks:java_8"
     },
     "file_denylist": [],
     "startup": "if [ \"${AUTO_UPDATE}\" == \"1\" ]; then GIT_ADDR=\"${GIT_ADDRESS}\"; if [[ \"${GIT_ADDR}\" != *.git ]]; then GIT_ADDR=\"${GIT_ADDR}.git\"; fi; USERNAME_NORM=\"${USERNAME:-git}\"; REPO_URL=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@${GIT_ADDR}\"; BRANCH=\"${BRANCH:-main}\"; if [ ! -d .git ] || [ ! -f .git\/config ]; then echo \"Cloning repo...\"; rm -rf * .git && git clone --branch \"$BRANCH\" \"$REPO_URL\" .; else echo \"Pulling latest from $BRANCH...\"; git fetch origin \"$BRANCH\" && git reset --hard FETCH_HEAD; fi; fi; if [ ! -z \"${PRE_START_CMD}\" ]; then echo \"Running pre-start command...\"; eval \"${PRE_START_CMD}\"; fi; if [ \"${BUILD_TOOL}\" == \"maven\" ]; then echo \"Building with Maven...\"; mvn -q package -DskipTests ${BUILD_ARGS}; elif [ \"${BUILD_TOOL}\" == \"gradle\" ]; then echo \"Building with Gradle...\"; .\/gradlew build -x test ${BUILD_ARGS}; fi; java -Dterminal.jline=false -Dterminal.ansi=true ${JVM_ARGS} -jar \/home\/container\/${JARFILE} ${APP_ARGS}",
