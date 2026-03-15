@@ -7,7 +7,7 @@
     "exported_at": "2026-03-15T18:16:02+01:00",
     "name": "Python Generic",
     "author": "eggs@pashka.host",
-    "description": "A generic Python egg with native Git support. Clones or pulls a repo on every start. Supports virtual environments, custom requirements files, and both pip package installs and removals.",
+    "description": "A generic Python egg with native Git support. Clones or pulls a repo on every start. Supports virtual environments and both pip package installs and removals.",
     "features": [],
     "docker_images": {
         "Python 3.13 [Stable]": "ghcr.io\/ptero-eggs\/yolks:python_3.13",
