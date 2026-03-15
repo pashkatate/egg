@@ -1,0 +1,126 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-03-15T19:08:19+01:00",
+    "name": "Dart Generic",
+    "author": "eggs@pashka.host",
+    "description": "A generic Dart egg with native Git support. Clones or pulls a repo on every start, fetches pub dependencies, and runs the application.",
+    "features": [],
+    "docker_images": {
+        "Dart [Stable]": "ghcr.io\/ptero-eggs\/yolks:dart_stable",
+        "Dart 3.3": "ghcr.io\/ptero-eggs\/yolks:dart_3.3",
+        "Dart 2.19": "ghcr.io\/ptero-eggs\/yolks:dart_2.19",
+        "Dart 2.18": "ghcr.io\/ptero-eggs\/yolks:dart_2.18",
+        "Dart 2.17": "ghcr.io\/ptero-eggs\/yolks:dart_2.17"
+    },
+    "file_denylist": [],
+    "startup": "if [ \"${AUTO_UPDATE}\" == \"1\" ]; then GIT_ADDR=\"${GIT_ADDRESS}\"; if [[ \"${GIT_ADDR}\" != *.git ]]; then GIT_ADDR=\"${GIT_ADDR}.git\"; fi; USERNAME_NORM=\"${USERNAME:-git}\"; REPO_URL=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@${GIT_ADDR}\"; BRANCH=\"${BRANCH:-main}\"; if [ ! -d .git ] || [ ! -f .git\/config ]; then echo \"Cloning repo...\"; rm -rf * .git && git clone --branch \"$BRANCH\" \"$REPO_URL\" .; else echo \"Pulling latest from $BRANCH...\"; git fetch origin \"$BRANCH\" && git reset --hard FETCH_HEAD; fi; fi; if [ ! -z \"${PRE_START_CMD}\" ]; then echo \"Running pre-start command...\"; eval \"${PRE_START_CMD}\"; fi; dart pub get; if [ \"${COMPILE}\" == \"1\" ]; then echo \"Compiling to native binary...\"; dart compile exe \/home\/container\/${MAIN_FILE} -o \/home\/container\/app && \/home\/container\/app ${APP_ARGS}; else dart run \/home\/container\/${MAIN_FILE} ${APP_ARGS}; fi",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": [\r\n        \"Listening\",\r\n        \"Started\",\r\n        \"Ready\",\r\n        \"running on\",\r\n        \"Server started\",\r\n        \"Connected\"\r\n    ]\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# Dart Generic \u2014 Installation Script\r\n# Support: eggs@pashka.host\r\n\r\napt update -y\r\napt install -y git curl jq file unzip\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\nif [ -z \"${GIT_ADDRESS}\" ]; then\r\n    echo \"No git repo set \u2014 skipping clone.\"\r\n    exit 0\r\nfi\r\n\r\nif [[ ${GIT_ADDRESS} != *.git ]]; then\r\n    GIT_ADDRESS=${GIT_ADDRESS}.git\r\nfi\r\n\r\nUSERNAME_NORM=\"${USERNAME:-git}\"\r\n\r\nif [ -z \"${ACCESS_TOKEN}\" ]; then\r\n    echo \"Using anonymous clone.\"\r\nelse\r\n    GIT_ADDRESS=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@$(echo ${GIT_ADDRESS} | cut -d\/ -f3-)\"\r\nfi\r\n\r\nBRANCH=\"${BRANCH:-main}\"\r\n\r\nif [ \"$(ls -A \/mnt\/server)\" ]; then\r\n    if [ -d .git ] && [ -f .git\/config ]; then\r\n        ORIGIN=$(git config --get remote.origin.url)\r\n        if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n            echo \"Pulling latest from ${BRANCH}...\"\r\n            git pull origin ${BRANCH}\r\n        else\r\n            echo \"Different repo detected \u2014 skipping pull.\"\r\n        fi\r\n    else\r\n        echo \"Files found with no git config \u2014 skipping to avoid data loss.\"\r\n        exit 10\r\n    fi\r\nelse\r\n    echo \"Cloning ${GIT_ADDRESS} (branch: ${BRANCH})...\"\r\n    git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .\r\nfi\r\n\r\necho \"Fetching pub dependencies...\"\r\ndart pub get\r\n\r\nif [ \"${COMPILE}\" == \"1\" ]; then\r\n    echo \"Compiling to native binary...\"\r\n    dart compile exe \/mnt\/server\/${MAIN_FILE} -o \/mnt\/server\/app\r\nfi\r\n\r\necho \"Installation complete.\"\r\nexit 0",
+            "container": "ghcr.io\/ptero-eggs\/yolks:dart_stable",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Git Repository",
+            "description": "Full HTTPS URL of the Git repository to clone.",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Branch",
+            "description": "Branch to clone and pull from on each start.",
+            "env_variable": "BRANCH",
+            "default_value": "main",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Username",
+            "description": "Username for authenticating with a private repository.",
+            "env_variable": "USERNAME",
+            "default_value": "git",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Access Token",
+            "description": "Personal access token for authenticating with a private repository.",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update",
+            "description": "Pulls the latest changes from the repository on every startup.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Main File",
+            "description": "Entry point Dart file to run.",
+            "env_variable": "MAIN_FILE",
+            "default_value": "bin\/main.dart",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "App Arguments",
+            "description": "Arguments passed to the application at runtime.",
+            "env_variable": "APP_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Compile to Binary",
+            "description": "Compiles the project to a native binary with dart compile exe before running.",
+            "env_variable": "COMPILE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Pre-Start Command",
+            "description": "Shell command to run after pulling but before the app starts.",
+            "env_variable": "PRE_START_CMD",
+            "default_value": "ulimit -c 0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        }
+    ]
+}
