@@ -1,0 +1,151 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-03-15T18:54:12+01:00",
+    "name": "Java Generic",
+    "author": "eggs@pashka.host",
+    "description": "A generic Java egg with native Git support. Clones or pulls a repo on every start and runs a specified JAR file. Supports custom JVM flags, memory tuning, and optional Maven or Gradle builds.",
+    "features": [],
+    "docker_images": {
+        "Java 25": "ghcr.io\/ptero-eggs\/yolks:java_25",
+        "Java 24": "ghcr.io\/ptero-eggs\/yolks:java_24",
+        "Java 23": "ghcr.io\/ptero-eggs\/yolks:java_23",
+        "Java 22": "ghcr.io\/ptero-eggs\/yolks:java_22",
+        "Java 21 [LTS]": "ghcr.io\/ptero-eggs\/yolks:java_21",
+        "Java 19": "ghcr.io\/ptero-eggs\/yolks:java_19",
+        "Java 17 [LTS]": "ghcr.io\/ptero-eggs\/yolks:java_17",
+        "Java 16": "ghcr.io\/ptero-eggs\/yolks:java_16",
+        "Java 11 [LTS]": "ghcr.io\/ptero-eggs\/yolks:java_11",
+        "Java 8": "ghcr.io\/ptero-eggs\/yolks:java_8"
+    },
+    "file_denylist": [],
+    "startup": "if [ \"${AUTO_UPDATE}\" == \"1\" ]; then GIT_ADDR=\"${GIT_ADDRESS}\"; if [[ \"${GIT_ADDR}\" != *.git ]]; then GIT_ADDR=\"${GIT_ADDR}.git\"; fi; USERNAME_NORM=\"${USERNAME:-git}\"; REPO_URL=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@${GIT_ADDR}\"; BRANCH=\"${BRANCH:-main}\"; if [ ! -d .git ] || [ ! -f .git\/config ]; then echo \"Cloning repo...\"; rm -rf * .git && git clone --branch \"$BRANCH\" \"$REPO_URL\" .; else echo \"Pulling latest from $BRANCH...\"; git fetch origin \"$BRANCH\" && git reset --hard FETCH_HEAD; fi; fi; if [ ! -z \"${PRE_START_CMD}\" ]; then echo \"Running pre-start command...\"; eval \"${PRE_START_CMD}\"; fi; if [ \"${BUILD_TOOL}\" == \"maven\" ]; then echo \"Building with Maven...\"; mvn -q package -DskipTests ${BUILD_ARGS}; elif [ \"${BUILD_TOOL}\" == \"gradle\" ]; then echo \"Building with Gradle...\"; .\/gradlew build -x test ${BUILD_ARGS}; fi; java -Dterminal.jline=false -Dterminal.ansi=true ${JVM_ARGS} -jar \/home\/container\/${JARFILE} ${APP_ARGS}",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": [\r\n        \"Listening\",\r\n        \"Started\",\r\n        \"Ready\",\r\n        \"running on\",\r\n        \"Server started\",\r\n        \"Connected\",\r\n        \"Application started\"\r\n    ]\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# Java Generic \u2014 Installation Script\r\n# Support: eggs@pashka.host\r\n\r\napt update -y\r\napt install -y git curl jq file unzip maven\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\nif [ -z \"${GIT_ADDRESS}\" ]; then\r\n    echo \"No git repo set \u2014 skipping clone.\"\r\n    exit 0\r\nfi\r\n\r\nif [[ ${GIT_ADDRESS} != *.git ]]; then\r\n    GIT_ADDRESS=${GIT_ADDRESS}.git\r\nfi\r\n\r\nUSERNAME_NORM=\"${USERNAME:-git}\"\r\n\r\nif [ -z \"${ACCESS_TOKEN}\" ]; then\r\n    echo \"Using anonymous clone.\"\r\nelse\r\n    GIT_ADDRESS=\"https:\/\/${USERNAME_NORM}:${ACCESS_TOKEN}@$(echo ${GIT_ADDRESS} | cut -d\/ -f3-)\"\r\nfi\r\n\r\nBRANCH=\"${BRANCH:-main}\"\r\n\r\nif [ \"$(ls -A \/mnt\/server)\" ]; then\r\n    if [ -d .git ] && [ -f .git\/config ]; then\r\n        ORIGIN=$(git config --get remote.origin.url)\r\n        if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n            echo \"Pulling latest from ${BRANCH}...\"\r\n            git pull origin ${BRANCH}\r\n        else\r\n            echo \"Different repo detected \u2014 skipping pull.\"\r\n        fi\r\n    else\r\n        echo \"Files found with no git config \u2014 skipping to avoid data loss.\"\r\n        exit 10\r\n    fi\r\nelse\r\n    echo \"Cloning ${GIT_ADDRESS} (branch: ${BRANCH})...\"\r\n    git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .\r\nfi\r\n\r\nif [ \"${BUILD_TOOL}\" == \"maven\" ]; then\r\n    echo \"Building with Maven...\"\r\n    mvn -q package -DskipTests ${BUILD_ARGS}\r\nelif [ \"${BUILD_TOOL}\" == \"gradle\" ]; then\r\n    echo \"Building with Gradle...\"\r\n    .\/gradlew build -x test ${BUILD_ARGS}\r\nfi\r\n\r\necho \"Installation complete.\"\r\nexit 0",
+            "container": "ghcr.io\/ptero-eggs\/yolks:java_21",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Git Repository",
+            "description": "Full HTTPS URL of the Git repository to clone.",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Branch",
+            "description": "Branch to clone and pull from on each start.",
+            "env_variable": "BRANCH",
+            "default_value": "main",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Username",
+            "description": "Username for authenticating with a private repository.",
+            "env_variable": "USERNAME",
+            "default_value": "git",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Access Token",
+            "description": "Personal access token for authenticating with a private repository.",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update",
+            "description": "Pulls the latest changes from the repository on every startup.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "JAR File",
+            "description": "The JAR file to run.",
+            "env_variable": "JARFILE",
+            "default_value": "app.jar",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "JVM Arguments",
+            "description": "Extra flags passed to the JVM. Example: -Xms512M -Xmx2G",
+            "env_variable": "JVM_ARGS",
+            "default_value": "-Xms128M -Xmx512M",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "App Arguments",
+            "description": "Arguments passed to the JAR at runtime.",
+            "env_variable": "APP_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Build Tool",
+            "description": "Build the project before starting. Leave empty to skip, or set to maven or gradle.",
+            "env_variable": "BUILD_TOOL",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:16",
+            "field_type": "text"
+        },
+        {
+            "name": "Build Arguments",
+            "description": "Extra flags passed to the build tool.",
+            "env_variable": "BUILD_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Pre-Start Command",
+            "description": "Shell command to run after pulling but before the app starts.",
+            "env_variable": "PRE_START_CMD",
+            "default_value": "ulimit -c 0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        }
+    ]
+}
